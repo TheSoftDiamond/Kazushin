@@ -72,7 +72,7 @@
 ### Prerequisites
 
 - [VLC](https://www.videolan.org/vlc/)
-- [Python 3.10.0](https://www.python.org/downloads/release/python-3100/)
+- [Python 3.12.0](https://www.python.org/downloads/release/python-3120/)
 
 In order to install the prerequisites, you will need to run the following command in a command line:  
 * pip
