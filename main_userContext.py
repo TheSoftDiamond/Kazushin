@@ -16,6 +16,7 @@ import settings
 import threading
 import random
 import asyncio
+import google.generativeai as genai
 from elevenlabs import *
 from elevenlabs.client import ElevenLabs
 
@@ -24,9 +25,10 @@ last_message_time_RawMessages = 0
 last_message_time_keywords = 0
 REDEEM_ID = settings.redeemID
 CONVERSATION_LIMIT = int(settings.CONVERSATION_LIMIT)
-AINAME_FIXED=settings.AINAME+":"
+AINAME_FIXED=settings.AINAME+":" 
 
 Version = "1.3.0" #Do not touch this line. It is used for version checking.
+
 class Bot(commands.Bot):
  
     conversations = {}
@@ -145,6 +147,59 @@ class Bot(commands.Bot):
     def extract_username(self, message):
         username = message.split()[-1]
         return username
+    
+    def setGeminiRatings(self, value):
+        block_settings_map = {
+            0: 'BLOCK_NONE',
+            1: 'BLOCK_ONLY_HIGH',
+            2: 'BLOCK_MEDIUM_AND_ABOVE',
+            3: 'BLOCK_LOW_AND_ABOVE'
+        }
+        default_value = 'HARM_BLOCK_THRESHOLD_UNSPECIFIED'
+        return block_settings_map.get(value, default_value)
+    
+    def getSystemInstructionsGemini(self, geminiConfig, geminiSafety, system_instruction):
+        return genai.GenerativeModel(
+            model_name=settings.model,
+            generation_config=geminiConfig,
+            safety_settings=geminiSafety,
+            system_instruction=system_instruction
+        ).start_chat(history=[])
+    
+    def setUpGemini(self):
+
+        HARMBLOCK = self.setGeminiRatings(settings.GeminiHarmHarassmentBlock)
+        HATEBLOCK = self.setGeminiRatings(settings.geminiHateSpeechBlock)
+        NSFWBLOCK = self.setGeminiRatings(settings.geminiNSFWBlock)
+        DANGERBLOCK = self.setGeminiRatings(settings.geminiDangerousBlock)
+
+        config = {
+            "temperature": settings.GeminiTemp, 
+            "top_p": settings.GeminiTopP, 
+            "top_k": settings.GeminiTopK, 
+            "max_output_tokens": settings.GeminiMaxTokens,
+            }
+        
+        safety = [
+            {
+                "category": "HARM_CATEGORY_HARASSMENT",
+                "threshold": HARMBLOCK
+            },
+            {
+                "category": "HARM_CATEGORY_HATE_SPEECH",
+                "threshold": HATEBLOCK
+            },
+            {
+                "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                "threshold": NSFWBLOCK
+            },
+            {
+                "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+                "threshold": DANGERBLOCK
+            },
+        ]
+
+        return config, safety
 
     async def getBio(self, username):
         try:
@@ -174,14 +229,15 @@ class Bot(commands.Bot):
             [my_chat.send_to_chat(messageChat) for messageChat in messages]
 
     def generate_speech(self, response, user_context, CONVERSATION_LIMIT, copiedmessage, author):
-        if user_context.count({ 'role': 'assistant', 'content': response }) == 0:
-            user_context.append({ 'role': 'assistant', 'content': response })
-
-        if len(user_context) > CONVERSATION_LIMIT:
-            try:
-                user_context.pop(1) #Pull the SECOND element only. Must be at least 1, so that AI keeps context
-            except IndexError:
-                print("IndexError on pop of user context")
+        if settings.AIMode.lower()=="openai":
+            if user_context.count({ 'role': 'assistant', 'content': response }) == 0:
+                user_context.append({ 'role': 'assistant', 'content': response })
+        if settings.AIMode.lower()=="openai":
+            if len(user_context) > CONVERSATION_LIMIT:
+                try:
+                    user_context.pop(1) #Pull the SECOND element only. Must be at least 1, so that AI keeps context
+                except IndexError:
+                    print("IndexError on pop of user context")
 
         # Process the response text to create SSML for speech synthesis. For Google Text to Speech.
         ssml_text = '<speak>'
@@ -293,14 +349,17 @@ class Bot(commands.Bot):
         print('------------------------------------------------------')
 
     def generate_speech_raid(self, response, user_context, CONVERSATION_LIMIT, copiedmessage, author):
-        if user_context.count({ 'role': 'assistant', 'content': response }) == 0:
-            user_context.append({ 'role': 'assistant', 'content': response })
+        # Will need a block for Gemini like this probably later.
 
-        if len(user_context) > CONVERSATION_LIMIT:
-            try:
-                user_context.pop(1) #Pull the SECOND element only. Must be at least 1, so that AI keeps context
-            except IndexError:
-                print("IndexError on pop of user context")
+        if settings.AIMode.lower()=="openai":
+            if user_context.count({ 'role': 'assistant', 'content': response }) == 0:
+                user_context.append({ 'role': 'assistant', 'content': response })
+
+            if len(user_context) > CONVERSATION_LIMIT:
+                try:
+                    user_context.pop(1) #Pull the SECOND element only. Must be at least 1, so that AI keeps context
+                except IndexError:
+                    print("IndexError on pop of user context")
 
         # Process the response text to create SSML for speech synthesis. For Google Text to Speech.
         ssml_text = '<speak>'
@@ -502,68 +561,105 @@ class Bot(commands.Bot):
 
         print('------------------------------------------------------')
 
-        if username not in Bot.conversations:
-            Bot.conversations[username] = []
-            user_context = Bot.conversations[username]
-            if settings.useUserRaidPrompt:
-                #Runs only if Per User Raid Prompt setting enabled in settings.py
-                usernamefield = username
-                userpromptsfolder = os.path.join(os.path.dirname(__file__), "customprompts/raidprompts")
-                thisUserPrompt = os.path.join(userpromptsfolder, f"{usernamefield}_prompt.txt")
-                print("Expecting User File @ "+thisUserPrompt+"\n")
-                if os.path.exists(thisUserPrompt):
-                    #File found case (User Prompt Mode)
-                    print("File found. Using "+thisUserPrompt+" context\n")
-                    thisUserString = open_file(thisUserPrompt)
-                    user_context.append({ 'role': 'system', 'content': thisUserString })
-                else:
-                    #File not found case (Default context)
-                    print("File not found. Using default user context instead.")
-                    user_context.append({ 'role': 'system', 'content': self.context_string_raid })
-            else:
-                #Runs if Per User Prompt Mode is disabled in settings.py
-                user_context.append({ 'role': 'system', 'content': self.context_string_raid })
-        user_context = Bot.conversations[username]
-        
-        print(user_context)
-
-        content = raidmessage.encode(encoding='ASCII',errors='ignore').decode()
-        user_context.append({ 'role': 'user', 'content': content })
-        
-        try:
-            response = gpt3_completion(user_context)
-        except openai.error.InvalidRequestError as e:
-            errormsg = str(e)
-            if "tokens" in errormsg:
-                Bot.conversations[username] = [] #Wipe User Messages if token limit reached
-                user_context = Bot.conversations[username] #Redeclare user context
+        if settings.AIMode.lower() == "gemini":
+            apikey = os.environ['GOOGLE_API_KEY']
+            genai.configure(api_key=apikey)
+            geminiConfig, geminiSafety = self.setUpGemini()
+            if message.author.name not in Bot.conversations:
+                Bot.conversations[message.author.name] = []
                 if settings.useUserRaidPrompt:
+                    #Runs only if Per User Prompt setting enabled in settings.py
+                    usernamefield = message.author.name
+                    userpromptsfolder = os.path.join(os.path.dirname(__file__), "customprompts/raidprompts")
+                    thisUserPrompt = os.path.join(userpromptsfolder, f"{usernamefield}_prompt.txt")
+                    print("Expecting User File @ "+thisUserPrompt+"\n")
+                    if os.path.exists(thisUserPrompt):
+                        #File found case (User Prompt Mode)
+                        print("File found. Using "+thisUserPrompt+" context\n")
+                        thisUserString = open_file(thisUserPrompt)
+                        Bot.conversations[message.author.name] = self.getSystemInstructionsGemini(geminiConfig, geminiSafety, thisUserString)
+                    else:
+                        #File not found case (Default context)
+                        print("File not found. Using default user context instead.")
+                        Bot.conversations[message.author.name] = self.getSystemInstructionsGemini(geminiConfig, geminiSafety, self.context_string_raid)
+                else:
+                    #Runs if Per User Prompt Mode is disabled in settings.py
+                    Bot.conversations[message.author.name] = self.getSystemInstructionsGemini(geminiConfig, geminiSafety, self.context_string_raid)
+
+            user_context = Bot.conversations[message.author.name]
+
+            print(user_context)
+            content = raidmessage.encode(encoding='ASCII',errors='ignore').decode()
+
+            try:
+                responseGemini = user_context.send_message(content)
+                response = responseGemini.text
+            except Exception as e:
+                print("Error at"+str(e))
+                responseGemini = user_context.send_message(content)
+                response = responseGemini.text
+            else:
+                print(AINAME_FIXED , responseGemini.text)
+            # Copied for text chat response reasons below
+            textresponse = responseGemini.text
+
+        if settings.AIMode.lower() == "openai":
+            if username not in Bot.conversations:
+                Bot.conversations[username] = []
+                user_context = Bot.conversations[username]
+                if settings.useUserRaidPrompt:
+                    #Runs only if Per User Raid Prompt setting enabled in settings.py
                     usernamefield = username
                     userpromptsfolder = os.path.join(os.path.dirname(__file__), "customprompts/raidprompts")
                     thisUserPrompt = os.path.join(userpromptsfolder, f"{usernamefield}_prompt.txt")
+                    print("Expecting User File @ "+thisUserPrompt+"\n")
                     if os.path.exists(thisUserPrompt):
+                        #File found case (User Prompt Mode)
+                        print("File found. Using "+thisUserPrompt+" context\n")
                         thisUserString = open_file(thisUserPrompt)
-                        user_context.append({ 'role': 'system', 'content': thisUserString }) #Readd context string from file
+                        user_context.append({ 'role': 'system', 'content': thisUserString })
                     else:
-                        user_context.append({ 'role': 'system', 'content': self.context_string_raid}) #Readd context string from default
+                        #File not found case (Default context)
+                        print("File not found. Using default user context instead.")
+                        user_context.append({ 'role': 'system', 'content': self.context_string_raid })
                 else:
-                    user_context.append({ 'role': 'system', 'content': self.context_string_raid }) #Readd context string from default
-                user_context.append({ 'role': 'user', 'content': content })
-                response = gpt3_completion(user_context) #Retry the question after readding context
+                    #Runs if Per User Prompt Mode is disabled in settings.py
+                    user_context.append({ 'role': 'system', 'content': self.context_string_raid })
+            user_context = Bot.conversations[username]
+            
+            print(user_context)
 
-        print(AINAME_FIXED , response)
+            content = raidmessage.encode(encoding='ASCII',errors='ignore').decode()
+            user_context.append({ 'role': 'user', 'content': content })
+            
+            try:
+                response = gpt3_completion(user_context)
+            except openai.error.InvalidRequestError as e:
+                errormsg = str(e)
+                if "tokens" in errormsg:
+                    Bot.conversations[username] = [] #Wipe User Messages if token limit reached
+                    user_context = Bot.conversations[username] #Redeclare user context
+                    if settings.useUserRaidPrompt:
+                        usernamefield = username
+                        userpromptsfolder = os.path.join(os.path.dirname(__file__), "customprompts/raidprompts")
+                        thisUserPrompt = os.path.join(userpromptsfolder, f"{usernamefield}_prompt.txt")
+                        if os.path.exists(thisUserPrompt):
+                            thisUserString = open_file(thisUserPrompt)
+                            user_context.append({ 'role': 'system', 'content': thisUserString }) #Readd context string from file
+                        else:
+                            user_context.append({ 'role': 'system', 'content': self.context_string_raid}) #Readd context string from default
+                    else:
+                        user_context.append({ 'role': 'system', 'content': self.context_string_raid }) #Readd context string from default
+                    user_context.append({ 'role': 'user', 'content': content })
+                    response = gpt3_completion(user_context) #Retry the question after readding context
+
+            print(AINAME_FIXED , response)
         
-        # Copied for text chat response reasons below
-        textresponse = response
+            # Copied for text chat response reasons below
+            textresponse = response
 
         await self.run_methods_concurrently_raid(textresponse, response, user_context, CONVERSATION_LIMIT, copiedmessage, message.author.name)
         Bot.conversations[username] = []
-
-
-        
-        # Since we have commands and are overriding the default `event_message`
-        # We must let the bot know we want to handle and invoke our commands...
-        #await self.handle_commands(message)
 
     async def userRunsEvent(self, message, pfilter, copiedmessage, currentTimeBits, currentTimeMsg, currentTimeKeywords):
         if settings.blockList: 
@@ -573,6 +669,17 @@ class Bot(commands.Bot):
         if settings.doProfanityCheck and pfilter.isProfane(message.content):
             print("Filter went off by "+message.author.name+": "+message.content) #Log the user and message that triggered the profanity filter
             return
+        if settings.doOpenAIModeration:
+            filterResponse = openai.moderations.create(
+                input=message.content,
+            )
+            for category, status in filterResponse.results[0].categories.to_dict().items():
+                if category in settings.safety_filter and settings.safety_filter[category]["enabled"]:
+                    score = getattr(filterResponse.results[0].category_scores, category)
+                    print(score)
+                    if score >= settings.safety_filter[category]["weight"]:
+                        print(f"Content flagged for {category} with score {score}")
+                        return
         theusername = message.author.name
         themessage = message.content
         print(f'Redemption by {message.author.name}: {message.content}')
@@ -582,60 +689,102 @@ class Bot(commands.Bot):
         
         print('------------------------------------------------------')
 
-
-        if message.author.name not in Bot.conversations:
-            Bot.conversations[message.author.name] = []
-            user_context = Bot.conversations[message.author.name]
-            if settings.useUserPrompt:
-                #Runs only if Per User Prompt setting enabled in settings.py
-                usernamefield = message.author.name
-                userpromptsfolder = os.path.join(os.path.dirname(__file__), "customprompts/userprompts")
-                thisUserPrompt = os.path.join(userpromptsfolder, f"{usernamefield}_prompt.txt")
-                print("Expecting User File @ "+thisUserPrompt+"\n")
-                if os.path.exists(thisUserPrompt):
-                    #File found case (User Prompt Mode)
-                    print("File found. Using "+thisUserPrompt+" context\n")
-                    thisUserString = open_file(thisUserPrompt)
-                    user_context.append({ 'role': 'system', 'content': thisUserString })
-                else:
-                    #File not found case (Default context)
-                    print("File not found. Using default user context instead.")
-                    user_context.append({ 'role': 'system', 'content': self.context_string })
-            else:
-                #Runs if Per User Prompt Mode is disabled in settings.py
-                user_context.append({ 'role': 'system', 'content': self.context_string })
-        user_context = Bot.conversations[message.author.name]
-        
-        print(user_context)
-
-        content = message.content.encode(encoding='ASCII',errors='ignore').decode()
-        user_context.append({ 'role': 'user', 'content': theusername+" said: "+content })
-        
-        try:
-            response = gpt3_completion(user_context)
-        except openai.error.InvalidRequestError as e:
-            errormsg = str(e)
-            if "tokens" in errormsg:
-                Bot.conversations[message.author.name] = [] #Wipe User Messages if token limit reached
-                user_context = Bot.conversations[message.author.name] #Redeclare user context
+        if settings.AIMode.lower() == "gemini":
+            apikey = os.environ['GOOGLE_API_KEY']
+            genai.configure(api_key=apikey)
+            geminiConfig, geminiSafety = self.setUpGemini()
+            if message.author.name not in Bot.conversations:
+                Bot.conversations[message.author.name] = []
+                user_context = Bot.conversations[message.author.name]
                 if settings.useUserPrompt:
+                    #Runs only if Per User Prompt setting enabled in settings.py
                     usernamefield = message.author.name
                     userpromptsfolder = os.path.join(os.path.dirname(__file__), "customprompts/userprompts")
                     thisUserPrompt = os.path.join(userpromptsfolder, f"{usernamefield}_prompt.txt")
+                    print("Expecting User File @ "+thisUserPrompt+"\n")
                     if os.path.exists(thisUserPrompt):
+                        #File found case (User Prompt Mode)
+                        print("File found. Using "+thisUserPrompt+" context\n")
                         thisUserString = open_file(thisUserPrompt)
-                        user_context.append({ 'role': 'system', 'content': thisUserString }) #Readd context string from file
+                        Bot.conversations[message.author.name] = self.getSystemInstructionsGemini(geminiConfig, geminiSafety, thisUserPrompt)
+                    else:
+                        #File not found case (Default context)
+                        print("File not found. Using default user context instead.")
+                        Bot.conversations[message.author.name] = self.getSystemInstructionsGemini(geminiConfig, geminiSafety, self.context_string)
+                else:
+                    #Runs if Per User Prompt Mode is disabled in settings.py
+                    Bot.conversations[message.author.name] = self.getSystemInstructionsGemini(geminiConfig, geminiSafety, self.context_string)
+
+            user_context = Bot.conversations[message.author.name]
+
+            print(user_context)
+
+            try:
+                responseGemini = user_context.send_message(theusername+" said: "+themessage)
+                response = responseGemini.text
+            except Exception as e:
+                print("Error at"+str(e))
+                responseGemini = user_context.send_message(theusername+" said: "+themessage)
+                response = responseGemini.text
+            else:
+                print(AINAME_FIXED , responseGemini.text)
+            # Copied for text chat response reasons below
+            textresponse = responseGemini.text
+
+        if settings.AIMode.lower() == "openai":
+            if message.author.name not in Bot.conversations:
+                Bot.conversations[message.author.name] = []
+                user_context = Bot.conversations[message.author.name]
+                if settings.useUserPrompt:
+                    #Runs only if Per User Prompt setting enabled in settings.py
+                    usernamefield = message.author.name
+                    userpromptsfolder = os.path.join(os.path.dirname(__file__), "customprompts/userprompts")
+                    thisUserPrompt = os.path.join(userpromptsfolder, f"{usernamefield}_prompt.txt")
+                    print("Expecting User File @ "+thisUserPrompt+"\n")
+                    if os.path.exists(thisUserPrompt):
+                        #File found case (User Prompt Mode)
+                        print("File found. Using "+thisUserPrompt+" context\n")
+                        thisUserString = open_file(thisUserPrompt)
+                        user_context.append({ 'role': 'system', 'content': thisUserString })
+                    else:
+                        #File not found case (Default context)
+                        print("File not found. Using default user context instead.")
+                        user_context.append({ 'role': 'system', 'content': self.context_string })
+                else:
+                    #Runs if Per User Prompt Mode is disabled in settings.py
+                    user_context.append({ 'role': 'system', 'content': self.context_string })
+            user_context = Bot.conversations[message.author.name]
+            
+            print(user_context)
+
+            content = message.content.encode(encoding='ASCII',errors='ignore').decode()
+            user_context.append({ 'role': 'user', 'content': theusername+" said: "+content })
+            
+            try:
+                response = gpt3_completion(user_context)
+            except openai.error.InvalidRequestError as e:
+                errormsg = str(e)
+                if "tokens" in errormsg:
+                    Bot.conversations[message.author.name] = [] #Wipe User Messages if token limit reached
+                    user_context = Bot.conversations[message.author.name] #Redeclare user context
+                    if settings.useUserPrompt:
+                        usernamefield = message.author.name
+                        userpromptsfolder = os.path.join(os.path.dirname(__file__), "customprompts/userprompts")
+                        thisUserPrompt = os.path.join(userpromptsfolder, f"{usernamefield}_prompt.txt")
+                        if os.path.exists(thisUserPrompt):
+                            thisUserString = open_file(thisUserPrompt)
+                            user_context.append({ 'role': 'system', 'content': thisUserString }) #Readd context string from file
+                        else:
+                            user_context.append({ 'role': 'system', 'content': self.context_string }) #Readd context string from default
                     else:
                         user_context.append({ 'role': 'system', 'content': self.context_string }) #Readd context string from default
-                else:
-                    user_context.append({ 'role': 'system', 'content': self.context_string }) #Readd context string from default
-                user_context.append({ 'role': 'user', 'content': theusername+" said: "+content })
-                response = gpt3_completion(user_context) #Retry the question after readding context
+                    user_context.append({ 'role': 'user', 'content': theusername+" said: "+content })
+                    response = gpt3_completion(user_context) #Retry the question after readding context
 
-        print(AINAME_FIXED , response)
-        
-        # Copied for text chat response reasons below
-        textresponse = response
+            print(AINAME_FIXED , response)
+            
+            # Copied for text chat response reasons below
+            textresponse = response
 
         await self.run_methods_concurrently(textresponse, response, user_context, CONVERSATION_LIMIT, copiedmessage, message.author.name)
         last_message_time_bitsMessages = currentTimeBits
@@ -657,6 +806,7 @@ class Bot(commands.Bot):
         await ctx.send(f'Hello {ctx.author.name}!')
  
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = creds.GOOGLE_JSON_PATH
+os.environ['GOOGLE_API_KEY'] = creds.GEMINI_API
 #elevenlabs.set_api_key(os.getenv("ELEVENLABS_API_KEY"))
 bot = Bot()
 bot.run()
