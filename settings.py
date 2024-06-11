@@ -23,7 +23,7 @@ AIMode = 'OpenAI'
 ### OPENAI SETTINGS ###
 
 # GPT Model to use
-chatEngine = 'gpt-3.5-turbo-1106'
+chatEngine = 'gpt-3.5-turbo'
 # AI Temperature from 0-2. (0 is very predictable, 2 is very random). Recommended values are 0.8 to 1.4.
 chatTemperature = 1.2
 # Token Count for messages (Amount of tokens to return in the message, Recommended to keep lower to prevent spamming chat.)
@@ -36,9 +36,31 @@ chatFreqPenalty = 0.0
 chatPresPenalty = 0.0
 # Chat Stoopers
 chatStop = [AINAME, 'CHATTER:']
+# Should block list be on?
+blockList = False
+# Profanity Filter Check
+doProfanityCheck = True
+
+# Do OpenAI Moderation checks for messages?
+# By default is off, but you can enable if people are bypassing your other filters or want extra protection.
+doOpenAIModeration = False
+# Safety Filter - Adjust weights to your likings, or disable/enable each module. 
+safety_filter = {
+    "hate": {"weight": 0.5, "enabled": True},
+    "hate/threatening": {"weight": 0.5, "enabled": True},   
+    "harassment": {"weight": 0.5, "enabled": True},
+    "harassment/threatening": {"weight": 0.5, "enabled": True},
+    "self-harm": {"weight": 0.5, "enabled": True},
+    "self-harm/intent": {"weight": 0.5, "enabled": True},
+    "self-harm/instructions": {"weight": 0.5, "enabled": True},
+    "violence": {"weight": 0.7, "enabled": False},
+    "violence/graphic": {"weight": 0.5, "enabled": True},
+    "sexual": {"weight": 0.8, "enabled": False},
+    "sexual/minors": {"weight": 0.5, "enabled": True},
+}
 
 ### GEMINI SETTINGS ###
-model = 'gemini-pro' # See https://ai.google.dev/models/gemini for more info regarding models.
+model = 'gemini-1.5-flash' # See https://ai.google.dev/models/gemini for more info regarding models.
 # Temperature
 GeminiTemp = 1
 # Top P
@@ -106,10 +128,6 @@ elevenSpeakingRate = 1
 
 ### BEGIN REDEEM SETTINGS ###
 
-# Should block list be on?
-blockList = False
-# Profanity Filter Check
-doProfanityCheck = True
 # Minimum message length of message to AI to get a response (not related to message detection events)
 globalminimumLength = 3
 # How big should the message chunks be for the bot's response? (200-500)
