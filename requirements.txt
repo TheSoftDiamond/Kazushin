@@ -13,6 +13,8 @@ google-auth==2.15.0
 google-cloud==0.34.0
 googleapis-common-protos==1.57.0
 google-cloud-texttospeech
+google-cloud-aiplatform
+google.generativeai
 
 elevenlabs==1.0.0b1
 
@@ -24,7 +26,7 @@ multidict==6.0.4
 networkx==3.2.1
 numpy==1.26.0
 
-openai==0.26.5
+openai==1.33.0
 opencv-python==4.7.0.68
 packaging==23.0
 Pillow==10.2.0
