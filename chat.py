@@ -1,6 +1,9 @@
 import openai
+from openai import OpenAI
 import creds
 import settings
+
+client = OpenAI(api_key=creds.OPENAI_API_KEY)
 
 def open_file(filepath):
     with open(filepath, 'r', encoding='utf-8') as infile:
@@ -11,7 +14,7 @@ openai.api_key = creds.OPENAI_API_KEY
 openai.api_base = 'https://api.openai.com/v1/chat'
 
 def gpt3_completion(messages, engine=settings.chatEngine, topp=max(min(float(settings.chatTopp), 1), 0) ,temp=max(min(float(settings.chatTemperature), 2), 1), tokens=abs(int(settings.chatTokenCount)), freq_pen=max(min(float(settings.chatFreqPenalty), 2), 1), pres_pen=max(min(float(settings.chatPresPenalty), 2), 1), stop=settings.chatStop):
-    response = openai.Completion.create(
+    response = client.chat.completions.create(
         model=engine,
         messages=messages,
         temperature=temp,
@@ -20,5 +23,5 @@ def gpt3_completion(messages, engine=settings.chatEngine, topp=max(min(float(set
         frequency_penalty=freq_pen,
         presence_penalty=pres_pen,
         stop=stop)
-    text = response['choices'][0]['message']['content'].strip()
+    text = response.choices[0].message.content.strip()
     return text
