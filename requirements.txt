@@ -48,7 +48,7 @@ SpeechRecognition
 
 
 twitchio==2.8.2
-typing_extensions==4.6.1
+typing_extensions==4.12.2
 setuptools==69.2.0
 google-generativeai
 
