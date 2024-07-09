@@ -27,7 +27,7 @@ REDEEM_ID = settings.redeemID
 CONVERSATION_LIMIT = int(settings.CONVERSATION_LIMIT)
 AINAME_FIXED=settings.AINAME+":" 
 
-Version = "1.3.0" #Do not touch this line. It is used for version checking.
+Version = "1.4.1" #Do not touch this line. It is used for version checking.
 
 class Bot(commands.Bot):
  
@@ -538,8 +538,9 @@ class Bot(commands.Bot):
             (settings.doKeywords and self.reply_from_keyword(message.content, settings.keywordsinUserMsg, settings.keywordsinUserChance) and message.author.name != creds.BOT_ACCOUNT_TWITCH_CHANNEL.lower() and (message.tags.get('custom-reward-id') is None or not (cheer_pattern.search(message.content))))
         ):
             tasks.append(asyncio.create_task(self.userRunsEvent(message, pfilter, copiedmessage, currentTimeBits, currentTimeMsg, currentTimeKeywords)))
-        if message.author.is_mod and any(message.content.startswith(shoutout) for shoutout in listOfShoutouts):
-            tasks.append(asyncio.create_task(self.RaidRunsEvent(message, pfilter, copiedmessage)))
+        if settings.doShoutout:
+           if message.author.is_mod and any(message.content.startswith(shoutout) for shoutout in listOfShoutouts):
+                tasks.append(asyncio.create_task(self.RaidRunsEvent(message, pfilter, copiedmessage)))
 
     async def RaidRunsEvent(self, message, pfilter, copiedmessage):
         if settings.doProfanityCheck and pfilter.isProfane(message.content):
@@ -634,24 +635,22 @@ class Bot(commands.Bot):
             
             try:
                 response = gpt3_completion(user_context)
-            except openai.error.InvalidRequestError as e:
-                errormsg = str(e)
-                if "tokens" in errormsg:
-                    Bot.conversations[username] = [] #Wipe User Messages if token limit reached
-                    user_context = Bot.conversations[username] #Redeclare user context
-                    if settings.useUserRaidPrompt:
-                        usernamefield = username
-                        userpromptsfolder = os.path.join(os.path.dirname(__file__), "customprompts/raidprompts")
-                        thisUserPrompt = os.path.join(userpromptsfolder, f"{usernamefield}_prompt.txt")
-                        if os.path.exists(thisUserPrompt):
-                            thisUserString = open_file(thisUserPrompt)
-                            user_context.append({ 'role': 'system', 'content': thisUserString }) #Readd context string from file
-                        else:
-                            user_context.append({ 'role': 'system', 'content': self.context_string_raid}) #Readd context string from default
+            except openai.BadRequestError:
+                Bot.conversations[username] = [] #Wipe User Messages if token limit reached
+                user_context = Bot.conversations[username] #Redeclare user context
+                if settings.useUserRaidPrompt:
+                    usernamefield = username
+                    userpromptsfolder = os.path.join(os.path.dirname(__file__), "customprompts/raidprompts")
+                    thisUserPrompt = os.path.join(userpromptsfolder, f"{usernamefield}_prompt.txt")
+                    if os.path.exists(thisUserPrompt):
+                        thisUserString = open_file(thisUserPrompt)
+                        user_context.append({ 'role': 'system', 'content': thisUserString }) #Readd context string from file
                     else:
-                        user_context.append({ 'role': 'system', 'content': self.context_string_raid }) #Readd context string from default
-                    user_context.append({ 'role': 'user', 'content': content })
-                    response = gpt3_completion(user_context) #Retry the question after readding context
+                        user_context.append({ 'role': 'system', 'content': self.context_string_raid}) #Readd context string from default
+                else:
+                    user_context.append({ 'role': 'system', 'content': self.context_string_raid }) #Readd context string from default
+                user_context.append({ 'role': 'user', 'content': content })
+                response = gpt3_completion(user_context) #Retry the question after readding context
 
             print(AINAME_FIXED , response)
         
@@ -762,24 +761,22 @@ class Bot(commands.Bot):
             
             try:
                 response = gpt3_completion(user_context)
-            except openai.error.InvalidRequestError as e:
-                errormsg = str(e)
-                if "tokens" in errormsg:
-                    Bot.conversations[message.author.name] = [] #Wipe User Messages if token limit reached
-                    user_context = Bot.conversations[message.author.name] #Redeclare user context
-                    if settings.useUserPrompt:
-                        usernamefield = message.author.name
-                        userpromptsfolder = os.path.join(os.path.dirname(__file__), "customprompts/userprompts")
-                        thisUserPrompt = os.path.join(userpromptsfolder, f"{usernamefield}_prompt.txt")
-                        if os.path.exists(thisUserPrompt):
-                            thisUserString = open_file(thisUserPrompt)
-                            user_context.append({ 'role': 'system', 'content': thisUserString }) #Readd context string from file
-                        else:
-                            user_context.append({ 'role': 'system', 'content': self.context_string }) #Readd context string from default
+            except openai.BadRequestError:
+                Bot.conversations[message.author.name] = [] #Wipe User Messages if token limit reached
+                user_context = Bot.conversations[message.author.name] #Redeclare user context
+                if settings.useUserPrompt:
+                    usernamefield = message.author.name
+                    userpromptsfolder = os.path.join(os.path.dirname(__file__), "customprompts/userprompts")
+                    thisUserPrompt = os.path.join(userpromptsfolder, f"{usernamefield}_prompt.txt")
+                    if os.path.exists(thisUserPrompt):
+                        thisUserString = open_file(thisUserPrompt)
+                        user_context.append({ 'role': 'system', 'content': thisUserString }) #Readd context string from file
                     else:
                         user_context.append({ 'role': 'system', 'content': self.context_string }) #Readd context string from default
-                    user_context.append({ 'role': 'user', 'content': theusername+" said: "+content })
-                    response = gpt3_completion(user_context) #Retry the question after readding context
+                else:
+                    user_context.append({ 'role': 'system', 'content': self.context_string }) #Readd context string from default
+                user_context.append({ 'role': 'user', 'content': theusername+" said: "+content })
+                response = gpt3_completion(user_context) #Retry the question after readding context
 
             print(AINAME_FIXED , response)
             
