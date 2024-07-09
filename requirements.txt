@@ -22,7 +22,7 @@ imageio==2.25.0
 iso8601==1.1.0
 keyboard
 
-multidict==6.0.4
+multidict==6.0.5
 networkx==3.2.1
 numpy==1.26.0
 
