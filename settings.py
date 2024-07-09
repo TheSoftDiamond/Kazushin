@@ -193,7 +193,7 @@ PostMSGtoChat = True
 # You can customize the behavior of the prompt message at raidPrompt.txt
 
 #Activate on shoutout commands?
-doShoutout = True
+doShoutout = False
 # What should the shoutout commands be? (Separated by a comma.)
 raidCommands = ["!shoutout", "!so"]
 # Should Shoutout Message Audio be played? (True/False)
