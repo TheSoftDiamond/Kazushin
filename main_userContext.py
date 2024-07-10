@@ -36,7 +36,7 @@ REDEEM_ID = settings.redeemID
 CONVERSATION_LIMIT = int(settings.CONVERSATION_LIMIT)
 AINAME_FIXED=settings.AINAME+":" 
 
-Version = "1.5.0" #Do not touch this line. It is used for version checking.
+Version = "1.5.0.1" #Do not touch this line. It is used for version checking.
 
 class Bot(commands.Bot):
  
@@ -241,7 +241,10 @@ class Bot(commands.Bot):
         if settings.AIMode.lower()=="openai":
             if user_context.count({ 'role': 'assistant', 'content': response }) == 0:
                 user_context.append({ 'role': 'assistant', 'content': response })
-        if settings.AIMode.lower()=="openai":
+        if settings.AIMode.lower()=="local":
+            if user_context.count({ 'role': 'user', 'content': response }) == 0:
+                user_context.append({ 'role': 'user', 'content': settings.AINAME+" said: "+response })
+        if settings.AIMode.lower()=="openai" or settings.AIMode.lower()=="local":
             if len(user_context) > CONVERSATION_LIMIT:
                 try:
                     user_context.pop(1) #Pull the SECOND element only. Must be at least 1, so that AI keeps context
@@ -841,7 +844,7 @@ class Bot(commands.Bot):
                 user_context.append({ 'role': 'user', 'content': theusername+" said: "+content })
                 response = engine.chat.completions.create(model=settings.localAI_ModelName, messages=user_context) #Retry the question after readding context
     
-            response = response.choices[0].message.content
+            response = response.choices[0].message.content.strip()
             print(AINAME_FIXED , response)
                 
                 # Copied for text chat response reasons below
