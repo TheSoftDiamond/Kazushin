@@ -20,6 +20,15 @@ import google.generativeai as genai
 from elevenlabs import *
 from elevenlabs.client import ElevenLabs
 
+
+# We only will import local AI handling if the user wishes to. The user must install requirements-localai.txt to use this feature. Otherwise it will fail and yield an error.
+# This will require you to follow instructions from https://github.com/xtekky/gpt4local for installation.
+if settings.AIMode.lower()=="local":
+    from gpt4localmain.g4l.local import *
+    from gpt4localmain.g4l import stubs, typing
+    engine = LocalEngine(gpu_layers=int(settings.localAI_gpulayers), cores=int(settings.localAI_CPUCores))
+
+
 last_message_time_bitsMessages = 0
 last_message_time_RawMessages = 0
 last_message_time_keywords = 0
@@ -27,7 +36,7 @@ REDEEM_ID = settings.redeemID
 CONVERSATION_LIMIT = int(settings.CONVERSATION_LIMIT)
 AINAME_FIXED=settings.AINAME+":" 
 
-Version = "1.4.1" #Do not touch this line. It is used for version checking.
+Version = "1.5.0" #Do not touch this line. It is used for version checking.
 
 class Bot(commands.Bot):
  
@@ -243,6 +252,7 @@ class Bot(commands.Bot):
         ssml_text = '<speak>'
         response_counter = 0
         mark_array = []
+        
         for s in response.split(' '):
             ssml_text += f'<mark name="{response_counter}"/>{s}'
             mark_array.append(s)
@@ -777,10 +787,64 @@ class Bot(commands.Bot):
                     user_context.append({ 'role': 'system', 'content': self.context_string }) #Readd context string from default
                 user_context.append({ 'role': 'user', 'content': theusername+" said: "+content })
                 response = gpt3_completion(user_context) #Retry the question after readding context
-
-            print(AINAME_FIXED , response)
             
-            # Copied for text chat response reasons below
+            print(AINAME_FIXED , response)
+                
+                # Copied for text chat response reasons below
+            textresponse = response
+
+        if settings.AIMode.lower() == "local":
+            if message.author.name not in Bot.conversations:
+                Bot.conversations[message.author.name] = []
+                user_context = Bot.conversations[message.author.name]
+                if settings.useUserPrompt:
+                    #Runs only if Per User Prompt setting enabled in settings.py
+                    usernamefield = message.author.name
+                    userpromptsfolder = os.path.join(os.path.dirname(__file__), "customprompts/userprompts")
+                    thisUserPrompt = os.path.join(userpromptsfolder, f"{usernamefield}_prompt.txt")
+                    print("Expecting User File @ "+thisUserPrompt+"\n")
+                    if os.path.exists(thisUserPrompt):
+                        #File found case (User Prompt Mode)
+                        print("File found. Using "+thisUserPrompt+" context\n")
+                        thisUserString = open_file(thisUserPrompt)
+                        user_context.append({ 'role': 'user', 'content': thisUserString })
+                    else:
+                        #File not found case (Default context)
+                        print("File not found. Using default user context instead.")
+                        user_context.append({ 'role': 'user', 'content': self.context_string })
+                else:
+                    #Runs if Per User Prompt Mode is disabled in settings.py
+                    user_context.append({ 'role': 'user', 'content': self.context_string })
+            user_context = Bot.conversations[message.author.name]
+            
+            print(user_context)
+
+            content = message.content.encode(encoding='ASCII',errors='ignore').decode()
+            user_context.append({ 'role': 'user', 'content': theusername+" said: "+content })
+            
+            try:
+                response = engine.chat.completions.create(model=settings.localAI_ModelName, messages=user_context)
+            except Exception as e:
+                Bot.conversations[message.author.name] = [] #Wipe User Messages if token limit reached
+                user_context = Bot.conversations[message.author.name] #Redeclare user context
+                if settings.useUserPrompt:
+                    usernamefield = message.author.name
+                    userpromptsfolder = os.path.join(os.path.dirname(__file__), "customprompts/userprompts")
+                    thisUserPrompt = os.path.join(userpromptsfolder, f"{usernamefield}_prompt.txt")
+                    if os.path.exists(thisUserPrompt):
+                        thisUserString = open_file(thisUserPrompt)
+                        user_context.append({ 'role': 'user', 'content': thisUserString }) #Readd context string from file
+                    else:
+                        user_context.append({ 'role': 'user', 'content': self.context_string }) #Readd context string from default
+                else:
+                    user_context.append({ 'role': 'user', 'content': self.context_string }) #Readd context string from default
+                user_context.append({ 'role': 'user', 'content': theusername+" said: "+content })
+                response = engine.chat.completions.create(model=settings.localAI_ModelName, messages=user_context) #Retry the question after readding context
+    
+            response = response.choices[0].message.content
+            print(AINAME_FIXED , response)
+                
+                # Copied for text chat response reasons below
             textresponse = response
 
         await self.run_methods_concurrently(textresponse, response, user_context, CONVERSATION_LIMIT, copiedmessage, message.author.name)
