@@ -1,0 +1,6 @@
+*.gguf
+__pycache__
+*.DS_Store
+open.py
+test.py
+files/storage/*
