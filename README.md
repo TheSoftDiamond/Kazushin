@@ -233,6 +233,7 @@ Distributed under the MIT License.
 * [Profanity Filter, by arhankundu99](https://github.com/arhankundu99/profanity-filter)
 * [Kuebiko, by adi-panda](https://github.com/adi-panda/Kuebiko)
 * [twitch_chat, by MariusPerle](https://github.com/MariusPerle/twitch_chat)
+* [GPT4Local, by xtekky](https://github.com/xtekky/gpt4local)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
