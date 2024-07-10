@@ -80,6 +80,17 @@ geminiNSFWBlock = 3
 #Dangerous Category
 geminiDangerousBlock = 3
 
+### Local AI SETTINGS ###
+# Note: For any features of this to work, this will require you to follow instructions from https://github.com/xtekky/gpt4local for installation prior to changing the AI Mode to Local.
+# Note: For Local AI, please keep in mind that this may system intennsive and may be recommended to run on an powerful machine that meets the requirements of the AI model you are using.
+# This feature is still a work in progress and may change in the future.
+
+# How many GPU layers to use? Use -1 to use all layers.
+localAI_gpulayers = -1
+# How many CPU cores to use? Use 0 to use all cores.
+localAI_CPUCores = 0
+# Model Name (minus the extension)
+localAI_ModelName = ""
 
 ### TTS SETTING ###
 #For more info on this section, see https://cloud.google.com/text-to-speech/docs/voices
