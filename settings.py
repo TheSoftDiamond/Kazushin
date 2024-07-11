@@ -17,8 +17,12 @@ CONVERSATION_LIMIT = 10
 useUserPrompt = False
 # Should we do version checking? True/False
 doVersionCheck = True
-# Engine to use (Accepted variables are: OpenAI, Gemini) for AI Engine Handing
-AIMode = 'OpenAI'
+# Engine to use (Accepted variables are: OpenAI, Gemini, Local) for AI Engine Handing
+AIMode = ''
+
+# Note: For local AI feature to work, this will require you to follow instructions from https://github.com/ollama/ollama and https://github.com/ollama/ollama-python for installation prior to changing the AI Mode to Local.
+# Note: For Local AI, please keep in mind that this may system intennsive and may be recommended to run on an powerful machine that meets the requirements of the AI model you are using.
+# A Read Me Tutorial will be provided in the future for help on Local AI setup.
 
 ### OPENAI SETTINGS ###
 
@@ -35,7 +39,7 @@ chatFreqPenalty = 0.0
 #Presence Penalty, value from 0 to 2 
 chatPresPenalty = 0.0
 # Chat Stoopers
-chatStop = [AINAME, 'CHATTER:']
+chatStop = ['CHATTER:']
 # Should block list be on?
 blockList = False
 # Profanity Filter Check
@@ -79,18 +83,6 @@ geminiHateSpeechBlock = 3
 geminiNSFWBlock = 3
 #Dangerous Category
 geminiDangerousBlock = 3
-
-### Local AI SETTINGS ###
-# Note: For any features of this to work, this will require you to follow instructions from https://github.com/xtekky/gpt4local for installation prior to changing the AI Mode to Local.
-# Note: For Local AI, please keep in mind that this may system intennsive and may be recommended to run on an powerful machine that meets the requirements of the AI model you are using.
-# This feature is still a work in progress and may change in the future.
-
-# How many GPU layers to use? Use -1 to use all layers.
-localAI_gpulayers = -1
-# How many CPU cores to use? Use 0 to use all cores.
-localAI_CPUCores = 0
-# Model Name (minus the extension)
-localAI_ModelName = ""
 
 ### TTS SETTING ###
 #For more info on this section, see https://cloud.google.com/text-to-speech/docs/voices
