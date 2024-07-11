@@ -104,18 +104,7 @@ In order to install the prerequisites, you will need to run the following comman
 
 ## Usage
 
-After finishing installing Kazunshin, you will most likely want to do some <a href="">post-installation setup</a>. Then after that, you can run the main_usercontext.py file.
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-<!-- ROADMAP -->
-## Roadmap
-
-- [ ] Make the python bot have user prompt context on a per person basis.
-  - [ ] Would require the user to create a file called prompt_chat_USERNAME.txt, otherwise uses default prompt if the file doesn't exist. As to prevent potential hundreds of files from being created if this feature was added..
-- [x] Ability to block a list of users from interacting with the bot in chat.
-
-See the [open issues](https://github.com/thesoftdiamond/kazushin/issues) for a full list of proposed features (and known issues).
+[See here](https://docs.kazush.in/en/home)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
