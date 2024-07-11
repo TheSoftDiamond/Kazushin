@@ -6,7 +6,7 @@ from google.cloud import texttospeech_v1beta1 as texttospeech
 from Library.profanityfiltermaster import profanity_filter as profanityfilter
 from Library.twitchchatmaster.twitch_chat import *
 import vlc
-import os 
+import os
 import time
 import creds
 import re
@@ -32,19 +32,19 @@ last_message_time_RawMessages = 0
 last_message_time_keywords = 0
 REDEEM_ID = settings.redeemID
 CONVERSATION_LIMIT = int(settings.CONVERSATION_LIMIT)
-AINAME_FIXED=settings.AINAME+":" 
+AINAME_FIXED=settings.AINAME+":"
 
 Version = "1.5.1" #Do not touch this line. It is used for version checking.
 
 class Bot(commands.Bot):
- 
+
     conversations = {}
- 
+
     def __init__(self):
         # Initialise our Bot with our access token, prefix and a list of channels to join on boot...
         # prefix can be a callable, which returns a list of strings or a string...
         # initial_channels can also be a callable which returns a list of strings...
- 
+
         self.context_string = open_file('prompt_chat.txt');
         self.context_string_raid = open_file('raidprompt.txt');
         super().__init__(token= creds.TWITCH_TOKEN, prefix='!', initial_channels=[creds.TWITCH_CHANNEL])
@@ -56,7 +56,7 @@ class Bot(commands.Bot):
             # Create the modified command and add it to a new list
             modified_commands.append(command.strip() + " ")
         return modified_commands
-        
+
     def version_Check(self, local_version):
         #Informs if an update is available.
         url = "https://raw.githubusercontent.com/TheSoftDiamond/Kazushin/main/version.txt"
@@ -70,38 +70,38 @@ class Bot(commands.Bot):
                 print("Kazushin Build "+Version+" is older than the online version. Consider updating your bot.")
             else:
                 print("Your Kazushin Build is up to date")
-        
+
             return version_online
         else:
             print(f"Failed to retrieve version check link data")
             return None
-        
+
     def minmax(self, value, minvalue, maxvalue):
         #Minmax function
         recalculatedvalue = max(min(value, maxvalue), minvalue)
         return recalculatedvalue
-           
+
     def is_between(self, value, minvalue, maxvalue):
         #Similar to minmax, but we return true or false here, but instead of forcing between two variables, tests if between two variables
         return minvalue <= value <= maxvalue
- 
+
     async def event_ready(self):
         # Notify us when everything is ready!
         # We are logged in and ready to chat and use commands...
         print(f'(Version '+Version+') - Logged in as '+str(self.nick))
         if settings.doVersionCheck:
             self.version_Check(Version)
-        
+
     def detect_cheer(self, text):
         pattern = r'cheer(\d+)' #detect messages with cheering in it
-        matches = re.findall(pattern, text, re.IGNORECASE) #look for all cases of cheer messages   
+        matches = re.findall(pattern, text, re.IGNORECASE) #look for all cases of cheer messages
         amount = 0 #Reset to 0 so that we ensure proper number counting
         for match in matches:
             if match:
                 amount += int(match)  # Add the bits from this amount to the total
         has_message = bool(re.sub(pattern, '', text, flags=re.IGNORECASE).strip())  #Boolean Check if there's non-cheer text
         return amount, has_message
-    
+
     def extract_pitch_speed(self, message):
         #pitch and speed patterns to read. This is used for Google Text to Speech.
         pattern = r'(pitch:[-\d.]+)|(speed:[-\d.]+)'
@@ -118,7 +118,7 @@ class Bot(commands.Bot):
         pitch = float(re.search(r'[-\d.]+', pitch_match[0]).group()) if pitch_match else None
         speed = float(re.search(r'[-\d.]+', speed_match[1]).group()) if speed_match else None
         return pitch, speed
-    
+
     def remove_pitch_and_speed(self, message):
         #Cleaning time. Remove any other instaances of pitch and speed from the message, especially so it does not speak it out loud too. This is used for Google Text to Speech.
         cleaned_message = re.sub(r'(pitch:[-\d.]+)|(speed:[-\d.]+)', '', message)
@@ -143,18 +143,18 @@ class Bot(commands.Bot):
             messages.append(" ".join(current_message))
 
         return messages
-    
+
     def reply_from_keyword(self, message_content, keywords_list, chance_threshold):
         # Used to determine the chance of the keyword activation being "thrown" away by the AI.
         if any(keyword in message_content for keyword in keywords_list):
             return random.randint(0, 100) < chance_threshold
         else:
             False
- 
+
     def extract_username(self, message):
         username = message.split()[-1]
         return username
-    
+
     def setGeminiRatings(self, value):
         block_settings_map = {
             0: 'BLOCK_NONE',
@@ -164,7 +164,7 @@ class Bot(commands.Bot):
         }
         default_value = 'HARM_BLOCK_THRESHOLD_UNSPECIFIED'
         return block_settings_map.get(value, default_value)
-    
+
     def getSystemInstructionsGemini(self, geminiConfig, geminiSafety, system_instruction):
         return genai.GenerativeModel(
             model_name=settings.model,
@@ -172,7 +172,7 @@ class Bot(commands.Bot):
             safety_settings=geminiSafety,
             system_instruction=system_instruction
         ).start_chat(history=[])
-    
+
     def setUpGemini(self):
 
         HARMBLOCK = self.setGeminiRatings(settings.GeminiHarmHarassmentBlock)
@@ -181,12 +181,12 @@ class Bot(commands.Bot):
         DANGERBLOCK = self.setGeminiRatings(settings.geminiDangerousBlock)
 
         config = {
-            "temperature": settings.GeminiTemp, 
-            "top_p": settings.GeminiTopP, 
-            "top_k": settings.GeminiTopK, 
+            "temperature": settings.GeminiTemp,
+            "top_p": settings.GeminiTopP,
+            "top_k": settings.GeminiTopK,
             "max_output_tokens": settings.GeminiMaxTokens,
             }
-        
+
         safety = [
             {
                 "category": "HARM_CATEGORY_HARASSMENT",
@@ -225,13 +225,13 @@ class Bot(commands.Bot):
         except Exception as e:
             pass
         return None, None
-        
+
     def send_messages_to_chat(self, textresponse):
         #Send Messages to Chat?
         sendMessage = True
         my_chat = TwitchChat(oauth=creds.BOT_ACCOUNT_TWITCH_OAUTH, bot_name=creds.BOT_ACCOUNT_TWITCH_CHANNEL, channel_name=creds.SENDMESSAGE_TO_THIS_CHANNEL)
         messages = self.split_messages(textresponse)
-    
+
         if sendMessage:
             [my_chat.send_to_chat(messageChat) for messageChat in messages]
 
@@ -253,7 +253,7 @@ class Bot(commands.Bot):
         ssml_text = '<speak>'
         response_counter = 0
         mark_array = []
-        
+
         for s in response.split(' '):
             ssml_text += f'<mark name="{response_counter}"/>{s}'
             mark_array.append(s)
@@ -315,11 +315,11 @@ class Bot(commands.Bot):
 
         if settings.ttsEngine.lower() == "elevenlabs":
             elevensettings = VoiceSettings(
-                speaking_rate=self.minmax(settings.elevenSpeakingRate, 0, 4), 
-                stability=float(settings.elevenStability), 
-                similarity_boost=float(settings.elevenSimilarityBoost), 
-                style=float(settings.elevenStlye), 
-                use_speaker_boost=settings.elevenSpeakerBoost) 
+                speaking_rate=self.minmax(settings.elevenSpeakingRate, 0, 4),
+                stability=float(settings.elevenStability),
+                similarity_boost=float(settings.elevenSimilarityBoost),
+                style=float(settings.elevenStlye),
+                use_speaker_boost=settings.elevenSpeakerBoost)
             audio = client.generate(
                 api_key=str(creds.ELEVENLABS_API_KEY),
                 text=response,
@@ -437,11 +437,11 @@ class Bot(commands.Bot):
 
         if settings.ttsEngine.lower() == "elevenlabs":
             elevensettings = VoiceSettings(
-                speaking_rate=self.minmax(settings.elevenSpeakingRate, 0, 4), 
-                stability=float(settings.elevenStability), 
-                similarity_boost=float(settings.elevenSimilarityBoost), 
-                style=float(settings.elevenStlye), 
-                use_speaker_boost=settings.elevenSpeakerBoost) 
+                speaking_rate=self.minmax(settings.elevenSpeakingRate, 0, 4),
+                stability=float(settings.elevenStability),
+                similarity_boost=float(settings.elevenSimilarityBoost),
+                style=float(settings.elevenStlye),
+                use_speaker_boost=settings.elevenSpeakerBoost)
             audio = client.generate(
                 api_key=str(creds.ELEVENLABS_API_KEY),
                 text=response,
@@ -480,7 +480,7 @@ class Bot(commands.Bot):
                 print("(PermissionError when trying to remove audio file. But not a serious issue.)")
 
         print('------------------------------------------------------')
-        
+
     async def run_methods_concurrently(self, textresponse, response, user_context, CONVERSATION_LIMIT, copiedmessage, author):
         thread1 = threading.Thread(target=self.generate_speech, args=(response, user_context, CONVERSATION_LIMIT, copiedmessage, author))
         thread2 = threading.Thread(target=self.send_messages_to_chat, args=(textresponse,))
@@ -527,12 +527,12 @@ class Bot(commands.Bot):
         if (settings.doBits and (message.author.name not in blocklist.blocked_names and has_message) and int(settings.bitsLookAtLowNumber) <= bitsAmount <= int(settings.bitsLookAtHighNumber)) and (currentTimeBits - last_message_time_bitsMessages < cooldownBits):
             time_leftBits = int(cooldownBits - (currentTimeBits - last_message_time_bitsMessages))
             the_chat = TwitchChat(oauth=creds.BOT_ACCOUNT_TWITCH_OAUTH, bot_name=creds.BOT_ACCOUNT_TWITCH_CHANNEL, channel_name=creds.SENDMESSAGE_TO_THIS_CHANNEL)
-            the_chat.send_to_chat(message.author.name+". this command has a cooldown time of "+str(cooldownBits)+ " seconds. You must wait "+str(time_leftBits)+" seconds.") 
+            the_chat.send_to_chat(message.author.name+". this command has a cooldown time of "+str(cooldownBits)+ " seconds. You must wait "+str(time_leftBits)+" seconds.")
             return
         if (settings.doRawMessages and (message.author.name not in blocklist.blocked_names) and message.content.startswith(settings.prefix+settings.detectMSGName)) and (currentTimeMsg - last_message_time_RawMessages < cooldownMsg):
             time_leftMsg = int(cooldownMsg - (currentTimeMsg - last_message_time_RawMessages))
             the_chat = TwitchChat(oauth=creds.BOT_ACCOUNT_TWITCH_OAUTH, bot_name=creds.BOT_ACCOUNT_TWITCH_CHANNEL, channel_name=creds.SENDMESSAGE_TO_THIS_CHANNEL)
-            the_chat.send_to_chat(message.author.name+". this command has a cooldown time of "+str(cooldownMsg)+ " seconds. You must wait "+str(time_leftMsg)+" seconds.") 
+            the_chat.send_to_chat(message.author.name+". this command has a cooldown time of "+str(cooldownMsg)+ " seconds. You must wait "+str(time_leftMsg)+" seconds.")
             return
         if (settings.doKeywords and (message.author.name not in blocklist.blocked_names) and message.author.name != creds.BOT_ACCOUNT_TWITCH_CHANNEL.lower() and (message.tags.get('custom-reward-id') is None and not cheer_pattern.search(message.content))):
             if ((any(keyword in message.content for keyword in settings.keywordsinUserMsg)) and ((currentTimeKeywords - last_message_time_keywords) < cooldownKeywords)):
@@ -638,12 +638,12 @@ class Bot(commands.Bot):
                     #Runs if Per User Prompt Mode is disabled in settings.py
                     user_context.append({ 'role': 'system', 'content': self.context_string_raid })
             user_context = Bot.conversations[username]
-            
+
             print(user_context)
 
             content = raidmessage.encode(encoding='ASCII',errors='ignore').decode()
             user_context.append({ 'role': 'user', 'content': content })
-            
+
             try:
                 response = gpt3_completion(user_context)
             except openai.BadRequestError:
@@ -664,7 +664,7 @@ class Bot(commands.Bot):
                 response = gpt3_completion(user_context) #Retry the question after readding context
 
             print(AINAME_FIXED , response)
-        
+
             # Copied for text chat response reasons below
             textresponse = response
 
@@ -672,7 +672,7 @@ class Bot(commands.Bot):
         Bot.conversations[username] = []
 
     async def userRunsEvent(self, message, pfilter, copiedmessage, currentTimeBits, currentTimeMsg, currentTimeKeywords):
-        if settings.blockList: 
+        if settings.blockList:
             if message.author.name in blocklist.blocked_names:
                 print("Blocked User "+message.author.name+" attempted to interact with bot")
                 return
@@ -696,7 +696,7 @@ class Bot(commands.Bot):
         # Check if the message is too long or short for the AI to handle
         if len(message.content) > 500 or len(message.content) < abs(int(settings.globalminimumLength)):
             return
-        
+
         print('------------------------------------------------------')
 
         if settings.AIMode.lower() == "gemini":
@@ -764,12 +764,12 @@ class Bot(commands.Bot):
                     #Runs if Per User Prompt Mode is disabled in settings.py
                     user_context.append({ 'role': 'system', 'content': self.context_string })
             user_context = Bot.conversations[message.author.name]
-            
+
             print(user_context)
 
             content = message.content.encode(encoding='ASCII',errors='ignore').decode()
             user_context.append({ 'role': 'user', 'content': theusername+" said: "+content })
-            
+
             try:
                 response = gpt3_completion(user_context)
             except openai.BadRequestError:
@@ -788,9 +788,9 @@ class Bot(commands.Bot):
                     user_context.append({ 'role': 'system', 'content': self.context_string }) #Readd context string from default
                 user_context.append({ 'role': 'user', 'content': theusername+" said: "+content })
                 response = gpt3_completion(user_context) #Retry the question after readding context
-            
+
             print(AINAME_FIXED , response)
-                
+
                 # Copied for text chat response reasons below
             textresponse = response
 
@@ -820,14 +820,14 @@ class Bot(commands.Bot):
                     user_context.append({ 'role': 'system', 'content': self.context_string })
                     localPrompt = self.context_string
             user_context = Bot.conversations[message.author.name]
-            
+
             print(user_context)
 
             content = message.content.encode(encoding='ASCII',errors='ignore').decode()
             user_context.append({ 'role': 'user', 'content': theusername+" said: "+content })
-            
+
             try:
-                response = ollama.chat(model='mistral', messages=user_context)
+                response = ollama.chat(model=settings.localAI_ModelName, messages=user_context)
             except Exception as e:
                 Bot.conversations[message.author.name] = [] #Wipe User Messages if token limit reached
                 user_context = Bot.conversations[message.author.name] #Redeclare user context
@@ -846,11 +846,11 @@ class Bot(commands.Bot):
                     user_context.append({ 'role': 'system', 'content': self.context_string }) #Readd context string from default
                     localPrompt = self.context_string
                 user_context.append({ 'role': 'user', 'content': theusername+" said: "+content })
-                response = ollama.chat(model='mistral', messages=user_context)#Retry the question after readding context
-    
+                response = ollama.chat(model=settings.localAI_ModelName, messages=user_context)#Retry the question after readding context
+
             response = response['message']['content'].strip()
             print(AINAME_FIXED , response)
-                
+
                 # Copied for text chat response reasons below
             textresponse = response
 
@@ -858,21 +858,21 @@ class Bot(commands.Bot):
         last_message_time_bitsMessages = currentTimeBits
         last_message_time_RawMessages = currentTimeMsg
         last_message_time_keywords = currentTimeKeywords
-        
+
         # Since we have commands and are overriding the default `event_message`
         # We must let the bot know we want to handle and invoke our commands...
         #await self.handle_commands(message)
- 
+
     @commands.command()
     async def hello(self, ctx: commands.Context):
         # Here we have a command hello, we can invoke our command with our prefix and command name
         # e.g ?hello
         # We can also give our commands aliases (different names) to invoke with.
- 
+
         # Send a hello back!
         # Sending a reply back to  the channel is easy... Below is an example.
         await ctx.send(f'Hello {ctx.author.name}!')
- 
+
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = creds.GOOGLE_JSON_PATH
 os.environ['GOOGLE_API_KEY'] = creds.GEMINI_API
 #elevenlabs.set_api_key(os.getenv("ELEVENLABS_API_KEY"))
