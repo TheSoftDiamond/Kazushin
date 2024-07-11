@@ -137,7 +137,7 @@ Distributed under the MIT License.
 * [Profanity Filter, by arhankundu99](https://github.com/arhankundu99/profanity-filter)
 * [Kuebiko, by adi-panda](https://github.com/adi-panda/Kuebiko)
 * [twitch_chat, by MariusPerle](https://github.com/MariusPerle/twitch_chat)
-* [Ollama, by xtekky](https://github.com/xtekky/ollama)
+* [Ollama, by ollama](https://github.com/ollama/ollama)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
