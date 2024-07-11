@@ -32,7 +32,7 @@
   <p align="center">
     Kazushin, a fork of <a href="https://github.com/adi-panda/Kuebiko">this project</a>, is a Twitch Chat Bot that reads chat and generates text-to-speech responses using OpenAI API and Google Cloud API. It comes with profanity detection, and more built-in.
     <br />
-    <a href="https://kazushindocs.softdiamond.net/"><strong>Explore the docs »</strong></a>
+    <a href="https://docs.kazush.in/en/home"><strong>Explore the docs »</strong></a>
     <br />
     <br />
     <a href="https://github.com/TheSoftDiamond/Kazushin/">View Demo</a>
@@ -69,6 +69,8 @@
 <!-- GETTING STARTED -->
 ## Getting Started
 
+For a more comprehensive guide, [check out the documentation](https://docs.kazush.in/en/home)
+
 ### Prerequisites
 
 - [VLC](https://www.videolan.org/vlc/)
@@ -79,113 +81,26 @@ In order to install the prerequisites, you will need to run the following comman
   ```sh
   pip install -r requirements.txt
   ```
-  
+
 ### Installation
 
 1. Clone the repo or fork it
    ```sh
    git clone https://github.com/TheSoftDiamond/Kazushin.git
    ```
-2. Grab an OpenAI API key from [OpenAPIKey](https://openai.com/api/), and Twitch Token from [TwitchApps](https://twitchapps.com/tmi/)<br>
-  2a. Strip the <b>oauth:</b> from the Twitch Token
-3. Create a [Google Cloud Project with TTS Service enabled](https://cloud.google.com/) and download the JSON credentials file andd add it to root folder. See [here](https://github.com/TheSoftDiamond/Kazushin/wiki/Setting-up-Google.json) for more info.
-4. Enter API Keys in creds.py:
-  ```python
-  # You're Twitch Token 
-  TWITCH_TOKEN = ""
-  # Your TWITCH Channel Name
-  TWITCH_CHANNEL = ""
-  # Your OpenAI API Key
-  OPENAI_API_KEY = ""
-  # Your Google Cloud JSON Path
-  GOOGLE_JSON_PATH = ""
-  # Your TWITCH BOT CHANNEL Token (Copy TWITCH_TOKEN if same channel as TWITCH_CHANNEL)
-  BOT_ACCOUNT_TWITCH_OAUTH = ""
-  # Your TWITCH BOT CHANNEL Name - This is the channel that will post messages to chat
-  BOT_ACCOUNT_TWITCH_CHANNEL = ""
-  # The channel to send the bot's messages to this channel
-  SENDMESSAGE_TO_THIS_CHANNEL = ""
-  ```
-5. In settings.py, change the bot name and more settings:
-```python
-import sys #Do not remove this line
-
-##### AI SPECIFIC Settings #####
-
-# AI's Name 
-AINAME = 'AINAME'
-# Conversation History
-CONVERSATION_LIMIT = 10
-
-### TTS SETTING ###
-#For more info on this section, see https://cloud.google.com/text-to-speech/docs/voices
-
-#Language Code
-languageCode = "en-US"
-#Name of Voice Model 
-voiceName = "en-US-Polyglot-1"
-#Gender (Accepts MALE/FEMALE)
-ssmlGender = "MALE"
-
-##### REDEEM DETECTION SETTINGS #####
-
-# Should the bot listen for a specific redeem?
-doRedeem = True
-# Redeem ID
-redeemID = ''
-
-##### BITS DETECTION SETTINGS #####
-
-# Should the bot listen for bits donations?
-doBits = True
-# Lower Bits Detection Number 
-bitsLookAtLowNumber = 100
-# Higher Bits Detection Number
-bitsLookAtHighNumber = sys.maxsize
-#Cooldown Timer in seconds
-cooldownBits = 120
-#Log to Twitch Chat?
-bitsMessageLogChat = True
-
-##### MESSAGE DETECTION SETTINGS #####
-
-# Should we listen in for raw messages with the prefix?
-doRawMessages = False
-# AI NAME to Detect
-detectMSGName = 'AINAME'
-# Prefix
-prefix = '!'
-#Cooldown Timer in seconds
-cooldownMsg = 120
-#Log to Twitch Chat?
-rawMessageLogChat = True
-
-##### MESSAGE SPECIFIC SETTINGS #####
-
-# Should the bot send messages to chat?
-PostMSGtoChat = True
-# Should block list be on?
-blockList = False
-# Profanity Filter Check
-doProfanityCheck = True
-# Minimum message length of message to AI to get a response (not related to message detection events)
-globalminimumLength = 3
-# Max Message Length (200-500), but would recommend leaving it at 500
-globalmaximumLength = 500
-
-```
+2. Populate the creds.py file with your info
+3. Adjust the settings.py file as to your needs.
+4. Run main_usercontext.py
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- FEATURES -->
 ## Features
-* Separate conversations per user.
-* Coversation History (last 10 messages. for every user). Can be changed.
-* Profanity Filter (Can be turned on and off)
-* Detect Cheers. Customizable in amounts
-* Listens for messages from chat
-* Post the bot's messages in chat. (Can be turned on and off)
-* Prevent certain users from interacting with bot (use blocklist.py) - Since Version 1.0.5
+* Separate conversations, prompts per user.
+* Profanity Filter
+* Detect Cheers, Keywords, andmore
+* Have the bot speak out loud or/and post messages to chat
+* [and many more!](https://docs.kazush.in/en/install/features)
 
 ## Usage
 
@@ -233,7 +148,7 @@ Distributed under the MIT License.
 * [Profanity Filter, by arhankundu99](https://github.com/arhankundu99/profanity-filter)
 * [Kuebiko, by adi-panda](https://github.com/adi-panda/Kuebiko)
 * [twitch_chat, by MariusPerle](https://github.com/MariusPerle/twitch_chat)
-* [GPT4Local, by xtekky](https://github.com/xtekky/gpt4local)
+* [Ollama, by xtekky](https://github.com/xtekky/ollama)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
