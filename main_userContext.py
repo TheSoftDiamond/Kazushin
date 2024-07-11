@@ -24,9 +24,7 @@ from elevenlabs.client import ElevenLabs
 # We only will import local AI handling if the user wishes to. The user must install requirements-localai.txt to use this feature. Otherwise it will fail and yield an error.
 # This will require you to follow instructions from https://github.com/xtekky/gpt4local for installation.
 if settings.AIMode.lower()=="local":
-    from gpt4localmain.g4l.local import *
-    from gpt4localmain.g4l import stubs, typing
-    engine = LocalEngine(gpu_layers=int(settings.localAI_gpulayers), cores=int(settings.localAI_CPUCores))
+    import ollama
 
 
 last_message_time_bitsMessages = 0
@@ -36,7 +34,7 @@ REDEEM_ID = settings.redeemID
 CONVERSATION_LIMIT = int(settings.CONVERSATION_LIMIT)
 AINAME_FIXED=settings.AINAME+":" 
 
-Version = "1.5.0.1" #Do not touch this line. It is used for version checking.
+Version = "1.5.1" #Do not touch this line. It is used for version checking.
 
 class Bot(commands.Bot):
  
@@ -242,8 +240,8 @@ class Bot(commands.Bot):
             if user_context.count({ 'role': 'assistant', 'content': response }) == 0:
                 user_context.append({ 'role': 'assistant', 'content': response })
         if settings.AIMode.lower()=="local":
-            if user_context.count({ 'role': 'user', 'content': response }) == 0:
-                user_context.append({ 'role': 'user', 'content': settings.AINAME+" said: "+response })
+            if user_context.count({ 'role': 'assistant', 'content': response }) == 0:
+                user_context.append({ 'role': 'assistant', 'content': response })
         if settings.AIMode.lower()=="openai" or settings.AIMode.lower()=="local":
             if len(user_context) > CONVERSATION_LIMIT:
                 try:
@@ -810,14 +808,17 @@ class Bot(commands.Bot):
                         #File found case (User Prompt Mode)
                         print("File found. Using "+thisUserPrompt+" context\n")
                         thisUserString = open_file(thisUserPrompt)
-                        user_context.append({ 'role': 'user', 'content': thisUserString })
+                        user_context.append({ 'role': 'system', 'content': thisUserString })
+                        localPrompt = thisUserString
                     else:
                         #File not found case (Default context)
                         print("File not found. Using default user context instead.")
-                        user_context.append({ 'role': 'user', 'content': self.context_string })
+                        user_context.append({ 'role': 'system', 'content': self.context_string })
+                        localPrompt = self.context_string
                 else:
                     #Runs if Per User Prompt Mode is disabled in settings.py
-                    user_context.append({ 'role': 'user', 'content': self.context_string })
+                    user_context.append({ 'role': 'system', 'content': self.context_string })
+                    localPrompt = self.context_string
             user_context = Bot.conversations[message.author.name]
             
             print(user_context)
@@ -826,7 +827,7 @@ class Bot(commands.Bot):
             user_context.append({ 'role': 'user', 'content': theusername+" said: "+content })
             
             try:
-                response = engine.chat.completions.create(model=settings.localAI_ModelName, messages=user_context)
+                response = ollama.chat(model='mistral', messages=user_context)
             except Exception as e:
                 Bot.conversations[message.author.name] = [] #Wipe User Messages if token limit reached
                 user_context = Bot.conversations[message.author.name] #Redeclare user context
@@ -836,15 +837,18 @@ class Bot(commands.Bot):
                     thisUserPrompt = os.path.join(userpromptsfolder, f"{usernamefield}_prompt.txt")
                     if os.path.exists(thisUserPrompt):
                         thisUserString = open_file(thisUserPrompt)
-                        user_context.append({ 'role': 'user', 'content': thisUserString }) #Readd context string from file
+                        user_context.append({ 'role': 'system', 'content': thisUserString }) #Readd context string from file
+                        localPrompt = thisUserString
                     else:
-                        user_context.append({ 'role': 'user', 'content': self.context_string }) #Readd context string from default
+                        user_context.append({ 'role': 'system', 'content': self.context_string }) #Readd context string from default
+                        localPrompt = self.context_string
                 else:
-                    user_context.append({ 'role': 'user', 'content': self.context_string }) #Readd context string from default
+                    user_context.append({ 'role': 'system', 'content': self.context_string }) #Readd context string from default
+                    localPrompt = self.context_string
                 user_context.append({ 'role': 'user', 'content': theusername+" said: "+content })
-                response = engine.chat.completions.create(model=settings.localAI_ModelName, messages=user_context) #Retry the question after readding context
+                response = ollama.chat(model='mistral', messages=user_context)#Retry the question after readding context
     
-            response = response.choices[0].message.content.strip()
+            response = response['message']['content'].strip()
             print(AINAME_FIXED , response)
                 
                 # Copied for text chat response reasons below
