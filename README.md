@@ -72,7 +72,7 @@
 For a more comprehensive guide, [check out the documentation](https://docs.kazush.in/en/home)
 
 ### Prerequisites
-
+- [Ollama](https://ollama.com/download)
 - [VLC](https://www.videolan.org/vlc/)
 - [Python 3.12.0](https://www.python.org/downloads/release/python-3120/)
 
@@ -94,6 +94,52 @@ In order to install the prerequisites, you will need to run the following comman
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
+### Setting up Ollama
+Make sure you have downloaded [Ollama](https://ollama.com/download).
+#### Creating the model
+1. Create a `Modelfile` in your project, pointing it to your model gguf:
+    ```
+    FROM llama-2-7b.Q2_K.gguf
+    ```
+    *You can download model data from sites such as [HuggingFace](https://huggingface.co/models)*
+2. Create the Ollama model from your existing template using poweshell/bash
+    ```bash
+    ❯ ollama create llama2 -f Modelfile
+    transferring model data 
+    creating model layer 
+    using already created layer sha256:a630f354771cf25496e079a49656730858712315cc71aee4adf9b97aceb251f8 
+    writing layer sha256:9d07cddc325f2abd269514a29cb3165eac0b06accd018a1b4da9982d6b986647 
+    writing manifest 
+    success
+    ```
+3. Serve the Ollama instance
+    ```bash
+    ❯ ollama serve
+    time=2024-07-10T20:20:46.364-04:00 level=INFO source=images.go:710 msg="total blobs: 0"
+    time=2024-07-10T20:20:46.364-04:00 level=INFO source=images.go:717 msg="total unused blobs removed: 0"
+    time=2024-07-10T20:20:46.364-04:00 level=INFO source=routes.go:1021 msg="Listening on 127.0.0.1:11434 (version 0.1.28)"
+    time=2024-07-10T20:20:46.364-04:00 level=INFO source=payload_common.go:107 msg="Extracting dynamic libraries..."
+    time=2024-07-10T20:20:47.967-04:00 level=INFO source=payload_common.go:146 msg="Dynamic LLM libraries [rocm_v5 cpu_avx2 cpu rocm_v6 cpu_avx cuda_v11]"
+    time=2024-07-10T20:20:47.967-04:00 level=INFO source=gpu.go:94 msg="Detecting GPU type"
+    time=2024-07-10T20:20:47.967-04:00 level=INFO source=gpu.go:265 msg="Searching for GPU management library libnvidia-ml.so"
+    time=2024-07-10T20:20:47.980-04:00 level=INFO source=gpu.go:311 msg="Discovered GPU libraries: []"
+    time=2024-07-10T20:20:47.980-04:00 level=INFO source=gpu.go:265 msg="Searching for GPU management library librocm_smi64.so"
+    time=2024-07-10T20:20:47.980-04:00 level=INFO source=gpu.go:311 msg="Discovered GPU libraries: []"
+    time=2024-07-10T20:20:47.980-04:00 level=INFO source=cpu_common.go:11 msg="CPU has AVX2"
+    time=2024-07-10T20:20:47.980-04:00 level=INFO source=routes.go:1044 msg="no GPU detected"
+    ```
+    This is foreground process, you will need to have this as a service in order to utilize it as a daemon.
+    
+    For example, on Linux systems: `systemctl enable --now ollama`.
+    This will enable Ollama on boot.
+
+4.  In settings.py adjust the `localAI_ModelName` to match your model name.
+    ```python
+    ### Local AI SETTINGS ###
+    # Model Name
+    localAI_ModelName = "llama2"
+    ```
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 <!-- FEATURES -->
 ## Features
 * Separate conversations, prompts per user.
@@ -137,7 +183,7 @@ Distributed under the MIT License.
 * [Profanity Filter, by arhankundu99](https://github.com/arhankundu99/profanity-filter)
 * [Kuebiko, by adi-panda](https://github.com/adi-panda/Kuebiko)
 * [twitch_chat, by MariusPerle](https://github.com/MariusPerle/twitch_chat)
-* [Ollama, by ollama](https://github.com/ollama/ollama)
+* [Ollama, by Ollama](https://github.com/ollama/ollama)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
