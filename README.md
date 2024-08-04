@@ -140,6 +140,7 @@ Make sure you have downloaded [Ollama](https://ollama.com/download).
     localAI_ModelName = "llama2"
     ```
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 <!-- FEATURES -->
 ## Features
 * Separate conversations, prompts per user.
