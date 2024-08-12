@@ -19,6 +19,8 @@ useUserPrompt = False
 doVersionCheck = True
 # Engine to use (Accepted variables are: OpenAI, Gemini, Local) for AI Engine Handing
 AIMode = ''
+# Should responses start with the AI's name? (True/False)
+UseAIName = True
 
 # Note: For local AI feature to work, this will require you to follow instructions from https://github.com/ollama/ollama and https://github.com/ollama/ollama-python for installation prior to changing the AI Mode to Local.
 # Note: For Local AI, please keep in mind that this may system intennsive and may be recommended to run on an powerful machine that meets the requirements of the AI model you are using.
@@ -87,7 +89,7 @@ geminiDangerousBlock = 3
 ### TTS SETTING ###
 #For more info on this section, see https://cloud.google.com/text-to-speech/docs/voices
 
-# Engine to use (Accepted variables are: Google, Elevenlabs) for TTS Voice Handing
+# Engine to use (Accepted variables are: Google, Elevenlabs, System) for TTS Voice Handing
 ttsEngine = 'Google'
 #Should the bot speak messages as audio?
 playAudio = True
