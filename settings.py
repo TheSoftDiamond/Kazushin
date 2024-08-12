@@ -33,7 +33,7 @@ UseAIName = True
 ### OPENAI SETTINGS ###
 
 # GPT Model to use
-chatEngine = 'gpt-3.5-turbo'
+chatEngine = 'gpt-4o-mini'
 # AI Temperature from 0-2. (0 is very predictable, 2 is very random). Recommended values are 0.8 to 1.4.
 chatTemperature = 1.2
 # Token Count for messages (Amount of tokens to return in the message, Recommended to keep lower to prevent spamming chat.)
