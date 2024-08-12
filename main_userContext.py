@@ -26,15 +26,20 @@ from elevenlabs.client import ElevenLabs
 if settings.AIMode.lower()=="local":
     import ollama
 
+if settings.ttsEngine.lower() == "system":
+    pass
+
 
 last_message_time_bitsMessages = 0
 last_message_time_RawMessages = 0
 last_message_time_keywords = 0
 REDEEM_ID = settings.redeemID
 CONVERSATION_LIMIT = int(settings.CONVERSATION_LIMIT)
-AINAME_FIXED=settings.AINAME+":" 
+AINAME_FIXED=settings.AINAME+":"
+if settings.UseAIName==False:
+    AINAME_FIXED=""
 
-Version = "1.5.1" #Do not touch this line. It is used for version checking.
+Version = "1.5.2" #Do not touch this line. It is used for version checking.
 
 class Bot(commands.Bot):
  
@@ -349,6 +354,9 @@ class Bot(commands.Bot):
 
                 media = vlc.MediaPlayer(audio_file)
                 media.play()
+
+            if settings.ttsEngine.lower() == "system":
+                pass
 
             # Remove the generated audio file and print some information.
             time.sleep(2)
