@@ -8,6 +8,10 @@ import sys #Do not remove this line
 
 ##### GENERAL AI SETTINGS #####
 
+### Local AI SETTINGS ###
+# Model Name
+localAI_ModelName = "llama2"
+
 # AI's Name (This is what will be parsed in the chat for the chat when the AI speaks.)
 AINAME = 'AINAME'
 # Conversation History (How many messages to keep in the conversation history)
