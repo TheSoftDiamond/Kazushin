@@ -94,7 +94,7 @@ In order to install the prerequisites, you will need to run the following comman
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-### Setting up Ollama
+### Setting up Ollama (Optional)
 Make sure you have downloaded [Ollama](https://ollama.com/download).
 #### Creating the model
 1. Create a `Modelfile` in your project, pointing it to your model gguf:
